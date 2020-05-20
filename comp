@@ -1,0 +1,16 @@
+ #!/bin/bash
+echo "Removing Previous Files regarding" $1 
+rm -f $1.j
+rm -f $1.class
+./jvmSimp $1 $1.j
+if [ -f $1.j ]; then 
+  echo "Running Jasmin on" $1.j
+  jasmin $1.j
+  else echo "No file" $1.j
+fi
+if [ -f $1.class ]; then 
+  echo "Executing Java on" $1.class
+  java $1
+  else echo "No file" $1.class
+fi
+
