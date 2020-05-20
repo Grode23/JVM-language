@@ -53,21 +53,30 @@ program: "start" T_id {create_preample($2); symbolTable=NULL; }
 	;
 
 /* A simple (very) definition of a list of statements.*/
-stmts:  '(' stmt ')' {/* nothing */}
-     |  '(' stmt ')' stmts 	{/* nothing */}
-     |  '(' error ')' stmts
-	;
+stmts:  '(' stmt ')' maybeStmts {/* nothing */}
+     |  '(' error ')' stmts ;
+
+maybeStmts: 
+  | stmts ;
 
 stmt:  asmt	{/* nothing */}
 	| printcmd {/* nothing */}
 	;
 
-printcmd: "print" '(' expr ')'  {
-			   	fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
-			    fprintf(yyout,"swap\n");
-				  fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($3.type) ) ;
-				}
-		   	;
+printcmd: 
+  "print" expresion;
+
+expresion: '(' expr ')' {
+    fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
+    fprintf(yyout,"swap\n");
+    fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($2.type));
+  }
+  | expr {
+    fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
+    fprintf(yyout,"swap\n");
+    fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($1.type));
+  };
+
 
 asmt: T_id expr
     {  /* ADD CODE HERE */
@@ -82,6 +91,10 @@ expr:   T_num  {$$.type = type_integer; fprintf(yyout,"sipush %s\n",$1);}
   | expr expr '+' {
     $$.type = typeDefinition($1.type, $2.type); 
     fprintf(yyout,"%sadd \n",typePrefix($$.type));
+  }
+  | expr expr '*' {
+    $$.type = typeDefinition($1.type, $2.type); 
+    fprintf(yyout,"%simul \n",typePrefix($$.type));
   }
   ;
 
