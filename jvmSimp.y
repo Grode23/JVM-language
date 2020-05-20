@@ -79,7 +79,8 @@ expresion: '(' expr ')' {
 
 
 asmt: T_id expr
-    {  /* ADD CODE HERE */
+    {  
+      fprintf(yyout, "%sstore \n", typePrefix($2.type) );
 		
 		}
 	;
@@ -94,7 +95,7 @@ expr:   T_num  {$$.type = type_integer; fprintf(yyout,"sipush %s\n",$1);}
   }
   | expr expr '*' {
     $$.type = typeDefinition($1.type, $2.type); 
-    fprintf(yyout,"%simul \n",typePrefix($$.type));
+    fprintf(yyout,"%smul \n",typePrefix($$.type));
   }
   ;
 
