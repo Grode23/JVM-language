@@ -137,6 +137,7 @@ digits: "float" {
   | "int" {
     $$ = 2;
   }
+  ;
 
 number: T_num | T_real;
 
