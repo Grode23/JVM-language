@@ -25,7 +25,8 @@ int yyerror(const char *);
    int intval;
    struct {
 	    ParType type;
-	    char * place;} se;
+	    char *place;
+      int num;} se;
 }
 
 /* Token declarations and their respective types */
@@ -42,10 +43,9 @@ int yyerror(const char *);
 %token T_type_float "float"
 %token T_inc "inc"
 
+%left '+'
+
 %type<se> expr
-%type<lexical> number
-// Value 1 means float and value 2 means integer
-%type<intval> digits
 
 %%
 
@@ -67,35 +67,34 @@ stmt:  asmt	{/* nothing */}
 	;
  
 printcmd: 
-  "print" expresion;
-
-expresion: '(' expr ')' {
+  "print" expr {
     fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
     fprintf(yyout,"swap\n");
     fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($2.type));
-  }
-  | expr {
-    fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
-    fprintf(yyout,"swap\n");
-    fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($1.type));
   };
 
 
 asmt: T_id expr{  
-    if (!addvar($1, $2.type)) {printf("Error");}
+    addvar($1, $2.type);
     fprintf(yyout, "%sstore %d\n", typePrefix($2.type), lookup_position($1) );	
-	}
-  | T_id '(' expr ')'{  
-    if (!addvar($1, $3.type)) {printf("Error");}
-    fprintf(yyout, "%sstore %d\n", typePrefix($3.type), lookup_position($1) );  
-  }
-	;
+	};
 
 
-expr: T_num {$$.type = type_integer; fprintf(yyout,"sipush %s\n",$1);}
-  | T_real {$$.type = type_real; fprintf(yyout,"ldc %s\n",$1);}
+expr: T_num {
+    $$.type = type_integer; 
+    $$.place = malloc(strlen($1)+1);
+    strcpy($$.place, $1); 
+    fprintf(yyout,"sipush %s\n",$1);}
+  | T_real {
+    $$.type = type_real; 
+    $$.place = malloc(strlen($1)+1);
+    strcpy($$.place, $1); 
+    fprintf(yyout,"ldc %s\n",$1);}
   | T_id { 
     $$.type = lookup_type($1);
+    $$.place = malloc(strlen($1)+1);
+    strcpy($$.place, $1); 
+
     fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1));
   }
   | expr expr '+' {
@@ -106,40 +105,40 @@ expr: T_num {$$.type = type_integer; fprintf(yyout,"sipush %s\n",$1);}
     $$.type = typeDefinition($1.type, $2.type); 
     fprintf(yyout,"%smul \n",typePrefix($$.type));
   }
-  | T_id "inc" {
-    $$.type = lookup_type($1);
-    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1));
-    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($1));
+  | expr "inc" {
+    $$.type = $1.type;
+    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1.place));
+    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($1.place));
 
   }
-  | "inc" T_id {
-    $$.type = lookup_type($2);
-    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2));
-    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2));
+  | "inc" expr {
+    $$.type = $2.type;
+    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2.place));
+    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2.place));
   }
-  | '(' digits number ')' {
-    if($2 == 1){
-      fprintf(yyout,"sipush %s\n",$3);
-      $$.type = type_real;
-      fprintf(yyout,"i2f\n");
-
-    } else {
-      fprintf(yyout,"ldc %s\n",$3);
-      $$.type = type_integer;
+  |  "int" expr {
+    if($2.type == type_real){
       fprintf(yyout,"f2i\n");
     }
+    $$.type = type_integer;
+
+  }
+  |  "float" expr {
+
+    if($2.type == type_integer){
+      fprintf(yyout,"i2f\n");
+    }
+    $$.type = type_real;
+
+  }
+  | '(' expr ')'{
+    //if($2.type != NULL){
+      $$.type = $2.type;
+    //} else {
+    //  $$.type = type_integer;
+    //}
   }
   ;
-
-digits: "float" {
-    $$ = 1;
-  }
-  | "int" {
-    $$ = 2;
-  }
-  ;
-
-number: T_num | T_real;
 
 %%
 
