@@ -42,6 +42,7 @@ int yyerror(const char *);
 %token T_type_integer "int"
 %token T_type_float "float"
 %token T_inc "inc"
+%token T_absolute "abs"
 
 %left '+'
 
@@ -123,7 +124,7 @@ expr: T_num {
     $$.type = type_integer;
 
   }
-  |  "float" expr {
+  | "float" expr {
 
     if($2.type == type_integer){
       fprintf(yyout,"i2f\n");
@@ -137,6 +138,11 @@ expr: T_num {
     //} else {
     //  $$.type = type_integer;
     //}
+  }
+  | expr "abs" {
+    $$.type = $1.type;
+    //fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1.place));
+    fprintf(yyout,"invokevirtual java/lang/Math/abs(%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($1.type));
   }
   ;
 

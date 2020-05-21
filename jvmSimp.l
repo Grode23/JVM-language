@@ -22,6 +22,8 @@ newline \n|\x0A|\x0D\x0A
 "print" {return T_print;}
 "int" {return T_type_integer;}
 "float" {return T_type_float;}
+"abs" {return T_absolute;}
+"++" {return T_inc;}
 
 "+" {return '+';}
 "-"  {return '-';}
@@ -31,8 +33,8 @@ newline \n|\x0A|\x0D\x0A
 ")" {return ')';}
 
 
-{D}+ {yylval.lexical = strdup(yytext);  return T_num;}
-{FLOAT} {yylval.lexical = strdup(yytext); return T_real;}
+[-]?{D}+ {yylval.lexical = strdup(yytext);  return T_num;}
+[-]?{FLOAT} {yylval.lexical = strdup(yytext); return T_real;}
 {VARIABLE} {yylval.lexical = strdup(yytext); return T_id;}
 
 {newline}  {/* yylineno used instead*/}
