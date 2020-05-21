@@ -24,6 +24,8 @@ newline \n|\x0A|\x0D\x0A
 "float" {return T_type_float;}
 "abs" {return T_absolute;}
 "++" {return T_inc;}
+"max" {return T_max;}
+"min" {return T_min;}
 
 "+" {return '+';}
 "-"  {return '-';}

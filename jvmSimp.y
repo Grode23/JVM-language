@@ -21,12 +21,13 @@ int yyerror(const char *);
 
 /* Declaring the possible types of Symbols*/
 %union{
-   char *lexical;
-   int intval;
-   struct {
-	    ParType type;
-	    char *place;
-      int num;} se;
+  char *lexical;
+  int intval;
+  struct {
+    ParType type;
+    char *place;
+    int num;
+  } se;
 }
 
 /* Token declarations and their respective types */
@@ -43,11 +44,13 @@ int yyerror(const char *);
 %token T_type_float "float"
 %token T_inc "inc"
 %token T_absolute "abs"
+%token T_max "max"
+%token T_min "min"
 
 %left '+'
 
 %type<se> expr
-
+%type<intval> minmax
 %%
 
 program: "start" T_id {create_preample($2); symbolTable=NULL; }
@@ -69,9 +72,14 @@ stmt:  asmt	{/* nothing */}
  
 printcmd: 
   "print" expr {
+    if(typePrefix($2.type) != "error"){
     fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
     fprintf(yyout,"swap\n");
     fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($2.type));
+  
+    }else{
+      printf("WROOOONG");
+    }
   };
 
 
@@ -117,9 +125,11 @@ expr: T_num {
     fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2.place));
     fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2.place));
   }
-  |  "int" expr {
+  | "int" expr {
     if($2.type == type_real){
       fprintf(yyout,"f2i\n");
+    } else {
+      printf("Warning: value is already int, in line %d\n", yylineno);
     }
     $$.type = type_integer;
 
@@ -128,6 +138,8 @@ expr: T_num {
 
     if($2.type == type_integer){
       fprintf(yyout,"i2f\n");
+    } else {
+      printf("Warning: value is already float, in line %d\n", yylineno);
     }
     $$.type = type_real;
 
@@ -141,11 +153,34 @@ expr: T_num {
   }
   | expr "abs" {
     $$.type = $1.type;
-    //fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1.place));
     fprintf(yyout,"invokevirtual java/lang/Math/abs(%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($1.type));
+  }
+  | expr expr minmax {
+
+    if($$.type = typeDefinition($1.type, $2.type) ){
+
+      if($3 == 0){
+        fprintf(yyout, "invokestatic java/lang/Math/min(%s%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($2.type), TYPEDESCRIPTOR($$.type)); 
+      } else{
+        fprintf(yyout, "invokestatic java/lang/Math/max(%s%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($2.type), TYPEDESCRIPTOR($$.type)); 
+      }
+      
+    }
   }
   ;
 
+/*
+ minmax has a type: int. (i use it as a boolean, but anyway. Same thing)
+ When this value is equals to 0, it is a min
+ Otherwise, it is a max
+ That way, I don't have to specify each expression differently
+ */
+minmax: "min" {
+    $$ = 0;
+  }
+  | "max" {
+    $$ = 1;
+  }
 %%
 
 /* The usual yyerror */
