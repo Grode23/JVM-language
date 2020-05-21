@@ -86,12 +86,13 @@ printcmd:
 
 
 asmt: T_id expr{  
-    if(typePrefix($1.type) != "error"){
+
+    //if(lookup_type($1) != $2.type){
       addvar($1, $2.type);
       fprintf(yyout, "%sstore %d\n", typePrefix($2.type), lookup_position($1) );	
-    } else {
-      yyerror("Variable fault");
-    }
+   // } else {
+     // yyerror("Variable fault");
+    //}
 
   };
 
@@ -160,6 +161,7 @@ expr: T_num {
           printf("Warning: value is already int, in line %d\n", yylineno);
         }
         $$.type = type_integer;
+        printf("Derf");
       } else {
         if($2.type == type_integer){
           fprintf(yyout,"i2f\n");
