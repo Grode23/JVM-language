@@ -51,6 +51,7 @@ int yyerror(const char *);
 
 %type<se> expr
 %type<intval> minmax
+%type<intval> casting
 %%
 
 program: "start" T_id {create_preample($2); symbolTable=NULL; }
@@ -85,9 +86,14 @@ printcmd:
 
 
 asmt: T_id expr{  
-    addvar($1, $2.type);
-    fprintf(yyout, "%sstore %d\n", typePrefix($2.type), lookup_position($1) );	
-	};
+    if(typePrefix($1.type) != "error"){
+      addvar($1, $2.type);
+      fprintf(yyout, "%sstore %d\n", typePrefix($2.type), lookup_position($1) );	
+    } else {
+      yyerror("Variable fault");
+    }
+
+  };
 
 
 expr: T_num {
@@ -144,23 +150,24 @@ expr: T_num {
     fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2.place));
     fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2.place));
   }
-  | "int" expr {
-    if($2.type == type_real){
-      fprintf(yyout,"f2i\n");
-    } else {
-      printf("Warning: value is already int, in line %d\n", yylineno);
-    }
-    $$.type = type_integer;
+  | casting expr {
 
-  }
-  | "float" expr {
-
-    if($2.type == type_integer){
-      fprintf(yyout,"i2f\n");
-    } else {
-      printf("Warning: value is already real, in line %d\n", yylineno);
-    }
-    $$.type = type_real;
+      // If it is equals to 0, it is integer, otherwise it's real
+      if($1 == 0){
+        if($2.type == type_real){
+          fprintf(yyout,"f2i\n");
+        } else {
+          printf("Warning: value is already int, in line %d\n", yylineno);
+        }
+        $$.type = type_integer;
+      } else {
+        if($2.type == type_integer){
+          fprintf(yyout,"i2f\n");
+        } else {
+          printf("Warning: value is already real, in line %d\n", yylineno);
+        }
+        $$.type = type_real;
+      }
 
   }
   | '(' expr ')'{
@@ -184,6 +191,14 @@ expr: T_num {
   }
   ;
 
+casting: "int" {
+    $$ = 0;
+  }
+  | "float" {
+    $$ = 1; 
+  }
+
+
 /*
  minmax has a type: int. (i use it as a boolean, but anyway. Same thing)
  When this value is equals to 0, it is a min
@@ -194,7 +209,7 @@ minmax: "min" {
     $$ = 0;
   }
   | "max" {
-    $$ = 1;
+    $$ = 1; 
   }
 %%
 
