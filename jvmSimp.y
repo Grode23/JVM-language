@@ -78,7 +78,8 @@ printcmd:
     fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($2.type));
   
     }else{
-      printf("WROOOONG");
+      printf("Variable %s NOT initialised, in line %d.\n", $2.place, yylineno);
+      yyerror("Variable fault");
     }
   };
 
@@ -107,10 +108,28 @@ expr: T_num {
     fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1));
   }
   | expr expr '+' {
+    if(typePrefix($1.type) == "error"){
+      printf("Variable %s NOT initialised, in line %d. \n", $1.place, yylineno);
+      yyerror("Variable fault");
+
+    }
+    if(typePrefix($2.type) == "error"){
+      printf("Variable %s NOT initialised, in line %d. ", $2.place, yylineno);
+      yyerror("Variable fault");
+
+    }
+
     $$.type = typeDefinition($1.type, $2.type); 
     fprintf(yyout,"%sadd \n",typePrefix($$.type));
   }
   | expr expr '*' {
+    if(typePrefix($1.type) == "error"){
+      printf("Variable %s NOT initialised, in line %d ", $1.place, yylineno);
+    }
+    if(typePrefix($2.type) == "error"){
+      printf("Variable %s NOT initialised, in line %d ", $2.place, yylineno);
+    }
+
     $$.type = typeDefinition($1.type, $2.type); 
     fprintf(yyout,"%smul \n",typePrefix($$.type));
   }
@@ -139,17 +158,13 @@ expr: T_num {
     if($2.type == type_integer){
       fprintf(yyout,"i2f\n");
     } else {
-      printf("Warning: value is already float, in line %d\n", yylineno);
+      printf("Warning: value is already real, in line %d\n", yylineno);
     }
     $$.type = type_real;
 
   }
   | '(' expr ')'{
-    //if($2.type != NULL){
-      $$.type = $2.type;
-    //} else {
-    //  $$.type = type_integer;
-    //}
+    $$.type = $2.type;
   }
   | expr "abs" {
     $$.type = $1.type;
@@ -164,7 +179,7 @@ expr: T_num {
       } else{
         fprintf(yyout, "invokestatic java/lang/Math/max(%s%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($2.type), TYPEDESCRIPTOR($$.type)); 
       }
-      
+
     }
   }
   ;
