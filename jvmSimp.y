@@ -47,11 +47,11 @@ int yyerror(const char *);
 %token T_max "max"
 %token T_min "min"
 
-%left '+'
-
 %type<se> expr
 %type<intval> minmax
 %type<intval> casting
+%type<intval> operation
+
 %%
 
 program: "start" T_id {create_preample($2); symbolTable=NULL; }
@@ -114,42 +114,36 @@ expr: T_num {
 
     fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1));
   }
-  | expr expr '+' {
+  | expr expr operation {
+    
     if(typePrefix($1.type) == "error"){
       printf("Variable %s NOT initialised, in line %d. \n", $1.place, yylineno);
       yyerror("Variable fault");
-
     }
+    
     if(typePrefix($2.type) == "error"){
       printf("Variable %s NOT initialised, in line %d. ", $2.place, yylineno);
       yyerror("Variable fault");
-
     }
 
     $$.type = typeDefinition($1.type, $2.type); 
-    fprintf(yyout,"%sadd \n",typePrefix($$.type));
-  }
-  | expr expr '*' {
-    if(typePrefix($1.type) == "error"){
-      printf("Variable %s NOT initialised, in line %d ", $1.place, yylineno);
-    }
-    if(typePrefix($2.type) == "error"){
-      printf("Variable %s NOT initialised, in line %d ", $2.place, yylineno);
-    }
 
-    $$.type = typeDefinition($1.type, $2.type); 
-    fprintf(yyout,"%smul \n",typePrefix($$.type));
+    if($3 == 0){
+      fprintf(yyout,"%sadd \n",typePrefix($$.type));
+    } else {
+      fprintf(yyout,"%smul \n",typePrefix($$.type));
+    }
   }
-  | expr "inc" {
-    $$.type = $1.type;
-    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1.place));
-    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($1.place));
+  | T_id "inc" {
+    $$.type = lookup_type($1);
+    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1));
+    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($1));
 
   }
-  | "inc" expr {
-    $$.type = $2.type;
-    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2.place));
-    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2.place));
+  | "inc" T_id {
+    $$.type = lookup_type($2);
+    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2));
+    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2));
   }
   | casting expr {
 
@@ -192,6 +186,21 @@ expr: T_num {
     }
   }
   ;
+/*
+ minmax has a type: int. (i use it as a boolean, but anyway. Same thing)
+ When this value is equals to 0, it is a min
+ Otherwise, it is a max
+ That way, I don't have to specify each expression differently
+
+  casting and operation works the same way
+ */
+ minmax: "min" {
+    $$ = 0;
+  }
+  | "max" {
+    $$ = 1; 
+  }
+  ;
 
 casting: "int" {
     $$ = 0;
@@ -199,19 +208,14 @@ casting: "int" {
   | "float" {
     $$ = 1; 
   }
+  ;
 
 
-/*
- minmax has a type: int. (i use it as a boolean, but anyway. Same thing)
- When this value is equals to 0, it is a min
- Otherwise, it is a max
- That way, I don't have to specify each expression differently
- */
-minmax: "min" {
-    $$ = 0;
+operation: '+' {
+  $$ = 0;
   }
-  | "max" {
-    $$ = 1; 
+  | '*' {
+    $$ = 1;
   }
 %%
 
