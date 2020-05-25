@@ -9,13 +9,13 @@ jvmSimpLex.c: jvmSimp.l
 	flex -s -ojvmSimpLex.c jvmSimp.l
 
 jvmSimp.tab.c: jvmSimp.y jvmSimpLex.c jvmSimp.h
-	bison -v jvmSimp.y
+	bison -v jvmSimp.y 
 
 cleanWin:
 	cmd /c erase jvmSimplex.c jvmSimp.tab.h
 	cmd /c erase jvmSimp.tab.c jvmSimp jvmSimp.exe jvmSimp.output
 
-clean-unix:
+cleanUnix:
 	rm -f jvmSimplex.c jvmSimp.tab.h
 	rm -f jvmSimp.tab.c jvmSimp jvmSimp.exe jvmSimp.output
 
