@@ -87,16 +87,13 @@ printcmd:
   ;
 
 asmt: T_id expr{  
-
     if(lookup_type($1) == $2.type || !lookup_type($1)){
       addvar($1, $2.type);
       fprintf(yyout, "%sstore %d\n", typePrefix($2.type), lookup_position($1) );	
     } else {
       yyerror("Variable fault");
     }
-
-  }
-  ; 
+  }; 
 
 expr: T_num {
     $$.type = type_integer; 
@@ -135,10 +132,10 @@ expr: T_num {
       fprintf(yyout,"%smul \n",typePrefix($$.type));
     }
   }
-  |  T_id "inc" {
-    $$.type = lookup_type($1);
-    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1));
-    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($1));
+  | '(' T_id "inc" ')' {
+    $$.type = lookup_type($2);
+    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2));
+    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2));
   }
   | '(' "inc" T_id  ')'{
     $$.type = lookup_type($3);
@@ -172,7 +169,7 @@ expr: T_num {
     fprintf(yyout,"invokestatic java/lang/Math/abs(%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($1.type));
   }
   | expr expr minmax {
-
+    
     $$.type = typeDefinition($1.type, $2.type);
 
     if($$.type == type_error){
