@@ -88,15 +88,15 @@ printcmd:
 
 asmt: T_id expr{  
 
-    //if(lookup_type($1) != $2.type){
+    if(lookup_type($1) == $2.type || !lookup_type($1)){
       addvar($1, $2.type);
       fprintf(yyout, "%sstore %d\n", typePrefix($2.type), lookup_position($1) );	
-   // } else {
-     // yyerror("Variable fault");
-    //}
+    } else {
+      yyerror("Variable fault");
+    }
 
   }
-  ;
+  ; 
 
 expr: T_num {
     $$.type = type_integer; 
@@ -155,7 +155,6 @@ expr: T_num {
         printf("Warning: value is already int, in line %d\n", yylineno);
       }
       $$.type = type_integer;
-      printf("Derf");
     } else {
       if($3.type == type_integer){
         fprintf(yyout,"i2f\n");
@@ -170,12 +169,13 @@ expr: T_num {
   }
   | expr "abs" {
     $$.type = $1.type;
-    fprintf(yyout,"invokevirtual java/lang/Math/abs(%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($1.type));
+    fprintf(yyout,"invokestatic java/lang/Math/abs(%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($1.type));
   }
   | expr expr minmax {
 
-    if($$.type = typeDefinition($1.type, $2.type) ){
+    $$.type = typeDefinition($1.type, $2.type);
 
+    if($$.type == type_error){
       if($3 == 0){
         fprintf(yyout, "invokestatic java/lang/Math/min(%s%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($2.type), TYPEDESCRIPTOR($$.type)); 
       } else{

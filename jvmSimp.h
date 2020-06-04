@@ -117,7 +117,11 @@ ParType typeDefinition(ParType Arg1, ParType Arg2)
 	//if (Arg1 == type_integer && Arg2 == type_real) {return type_real;}
 	//if (Arg1 == type_real && Arg2 == type_integer) {return type_real;}
 	if (Arg1 == type_real && Arg2 == type_real) {return type_real;}
-	else {yyerror("Type missmatch");}
+
+	if (Arg2 == type_error) {return Arg1;}
+	if (Arg1 == type_error) {return Arg2;}
+
+	yyerror("Type missmatch");
 }
 
 
