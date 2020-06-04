@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "sglib.h"
+
 /* Just for being able to show the line number were the error occurs.*/
 extern FILE *yyout;
 extern int yylineno;
@@ -61,7 +62,8 @@ program: "start" T_id {create_preample($2); symbolTable=NULL; }
 
 /* A simple (very) definition of a list of statements.*/
 stmts:  '(' stmt ')' maybeStmts {/* nothing */}
-     |  '(' error ')' stmts ;
+  |  '(' error ')' stmts 
+  ;
 
 maybeStmts: /* Empty */
   | stmts 
@@ -74,16 +76,15 @@ stmt:  asmt	{/* nothing */}
 printcmd: 
   "print" expr {
     if(typePrefix($2.type) != "error"){
-    fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
-    fprintf(yyout,"swap\n");
-    fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($2.type));
-  
-    }else{
+      fprintf(yyout,"getstatic java/lang/System/out Ljava/io/PrintStream;\n");
+      fprintf(yyout,"swap\n");
+      fprintf(yyout,"invokevirtual java/io/PrintStream/println(%s)V\n", TYPEDESCRIPTOR($2.type));
+    } else {
       printf("Variable %s NOT initialised, in line %d.\n", $2.place, yylineno);
       yyerror("Variable fault");
     }
-  };
-
+  }
+  ;
 
 asmt: T_id expr{  
 
@@ -94,8 +95,8 @@ asmt: T_id expr{
      // yyerror("Variable fault");
     //}
 
-  };
-
+  }
+  ;
 
 expr: T_num {
     $$.type = type_integer; 
@@ -134,39 +135,36 @@ expr: T_num {
       fprintf(yyout,"%smul \n",typePrefix($$.type));
     }
   }
-  | T_id "inc" {
-    $$.type = lookup_type($1);
-    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($1));
-    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($1));
-
-  }
-  | "inc" T_id {
+  | '(' T_id "inc" ')' {
     $$.type = lookup_type($2);
-    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2));
     fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($2));
+    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($2));
   }
-  | casting expr {
+  | '(' "inc" T_id  ')'{
+    $$.type = lookup_type($3);
+    fprintf(yyout, "%sinc %d 1\n", typePrefix($$.type), lookup_position($3));
+    fprintf(yyout, "%sload %d\n", typePrefix($$.type), lookup_position($3));
+  }
+  | '(' casting expr ')'{
 
-      // If it is equals to 0, it is integer, otherwise it's real
-      if($1 == 0){
-        if($2.type == type_real){
-          fprintf(yyout,"f2i\n");
-        } else {
-          printf("Warning: value is already int, in line %d\n", yylineno);
-        }
-        $$.type = type_integer;
-        printf("Derf");
+    // If it is equals to 0, it is integer, otherwise it's real
+    if($2 == 0){
+      if($3.type == type_real){
+        fprintf(yyout,"f2i\n");
       } else {
-        if($2.type == type_integer){
-          fprintf(yyout,"i2f\n");
-        } else {
-          printf("Warning: value is already real, in line %d\n", yylineno);
-        }
-        $$.type = type_real;
+        printf("Warning: value is already int, in line %d\n", yylineno);
       }
-
+      $$.type = type_integer;
+    } else {
+      if($3.type == type_integer){
+        fprintf(yyout,"i2f\n");
+      } else {
+        printf("Warning: value is already real, in line %d\n", yylineno);
+      }
+      $$.type = type_real;
+    }
   }
-  | '(' expr ')'{
+  | '(' expr ')' {
     $$.type = $2.type;
   }
   | expr "abs" {
@@ -174,8 +172,10 @@ expr: T_num {
     fprintf(yyout,"invokevirtual java/lang/Math/abs(%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($1.type));
   }
   | expr expr minmax {
+    
+    $$.type = typeDefinition($1.type, $2.type);
 
-    if($$.type = typeDefinition($1.type, $2.type) ){
+    if($$.type == type_error){
 
       if($3 == 0){
         fprintf(yyout, "invokestatic java/lang/Math/min(%s%s)%s\n", TYPEDESCRIPTOR($1.type), TYPEDESCRIPTOR($2.type), TYPEDESCRIPTOR($$.type)); 
@@ -186,6 +186,7 @@ expr: T_num {
     }
   }
   ;
+
 /*
  minmax has a type: int. (i use it as a boolean, but anyway. Same thing)
  When this value is equals to 0, it is a min
@@ -210,13 +211,14 @@ casting: "int" {
   }
   ;
 
-
 operation: '+' {
   $$ = 0;
   }
   | '*' {
     $$ = 1;
   }
+  ;
+  
 %%
 
 /* The usual yyerror */
