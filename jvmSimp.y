@@ -32,7 +32,6 @@ int yyerror(const char *);
 }
 
 /* Token declarations and their respective types */
-
 %token <lexical> T_num
 %token <lexical> T_real
 %token '('
@@ -57,8 +56,8 @@ int yyerror(const char *);
 
 program: "start" T_id {create_preample($2); symbolTable=NULL; }
 			stmts "end"
-			{fprintf(yyout,"return \n.end method\n\n");}
-	;
+			{fprintf(yyout,"return \n.end method\n\n");
+  };
 
 /* A simple (very) definition of a list of statements.*/
 stmts:  '(' stmt ')' maybeStmts {/* nothing */}
@@ -83,10 +82,9 @@ printcmd:
       printf("Variable %s NOT initialised, in line %d.\n", $2.place, yylineno);
       yyerror("Variable fault");
     }
-  }
-  ;
+  };
 
-asmt: T_id expr{  
+asmt: T_id expr {  
     if(lookup_type($1) == $2.type || !lookup_type($1)){
       addvar($1, $2.type);
       fprintf(yyout, "%sstore %d\n", typePrefix($2.type), lookup_position($1) );	
@@ -180,11 +178,10 @@ expr: T_num {
       }
 
     }
-  }
-  ;
+  };
 
 /*
- minmax has a type: int. (i use it as a boolean, but anyway. Same thing)
+ minmax has a type: int. (I use it as a boolean)
  When this value is equals to 0, it is a min
  Otherwise, it is a max
  That way, I don't have to specify each expression differently
@@ -196,24 +193,21 @@ expr: T_num {
   }
   | "max" {
     $$ = 1; 
-  }
-  ;
+  };
 
 casting: "int" {
     $$ = 0;
   }
   | "float" {
     $$ = 1; 
-  }
-  ;
+  };
 
 operation: '+' {
   $$ = 0;
   }
   | '*' {
     $$ = 1;
-  }
-  ;
+  };
   
 %%
 

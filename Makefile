@@ -9,7 +9,7 @@ jvmSimpLex.c: jvmSimp.l
 	flex -s -ojvmSimpLex.c jvmSimp.l
 
 jvmSimp.tab.c: jvmSimp.y jvmSimpLex.c jvmSimp.h
-	bison -v jvmSimp.y 
+	bison -v jvmSimp.y -rall
 
 cleanWin:
 	cmd /c erase jvmSimplex.c jvmSimp.tab.h
